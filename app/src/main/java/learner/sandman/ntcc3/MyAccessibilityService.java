@@ -90,6 +90,7 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		faceParams.gravity= Gravity.TOP|Gravity.LEFT;
 		faceParams.x=0;
 		faceParams.y=0;
+
 		//faceParams.alpha= (float) ;
 		myWindowManager.addView(faceView,faceParams);
 		//************************SETTING UP THE LOCK VIEW************************//
@@ -215,6 +216,14 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 						}
 						Log.d("TAG5","should go up");
 						break;
+					case 9:
+						cursorParams.alpha=0;
+						faceParams.alpha=0;
+						break;
+					case 10:
+						cursorParams.alpha=1;
+						faceParams.alpha=1;
+
 					default:
 						cusor.setBackgroundColor(Color.WHITE);
 
@@ -242,9 +251,6 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		};
 
 
-
-		//**************************LOCK HANDLER***********************//
-
 		//**************************OPENING THE FACE DETECTION FILES***********************//
 
 
@@ -260,9 +266,12 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		lockImg.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
+				Message message=new Message();
 				if(firstClick==0){
 					lock++;
 					firstClick=1;
+					message.what=9;
+					handler.sendMessage(message);
 					Toast.makeText(MyAccessibilityService.this, "Locked", Toast.LENGTH_SHORT).show();
 					try {
 						Thread.sleep(1000);
@@ -273,6 +282,8 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 				else{
 					lock--;
 					firstClick=0;
+					message.what=10;
+					handler.sendMessage(message);
 					Toast.makeText(MyAccessibilityService.this, "Unlocked", Toast.LENGTH_SHORT).show();
 					try {
 						Thread.sleep(1000);
@@ -383,7 +394,11 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 
 	@Override
 	public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-
+//		if(lock==1){
+//			Message message=new Message();
+//			message.what=9;
+//			handler.sendMessage(message);
+//		}
 		//****************I AM INCREASING THE FRAME COUNT******************************//
 		frameCount = (frameCount + 1) % 200;
 		//*****************I AM COLLECTING THE TWO MATS FROM CAMERA**********************//
@@ -520,6 +535,7 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 				}
 				//if (lock == 0) {
 					handler.sendMessage(msg);
+
 				//}
 				try {
 					Thread.sleep(10);
