@@ -21,6 +21,7 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.example.android.globalactionbarservice.R;
 
@@ -47,8 +48,13 @@ import java.io.InputStream;
 
 
 public class MyAccessibilityService extends AccessibilityService implements CameraBridgeViewBase.CvCameraViewListener2 {
+
+	//Lock variables
+	int lock=0;
+	int firstClick=0;
+	Handler lockHandler;
 	//****************Variables for the cursorview**************//
-	FrameLayout cursorFrameLayout;
+	FrameLayout cursorFrameLayout,mLayout;
 	WindowManager.LayoutParams cursorParams;
 
 	//*****Variables for setting up the faceview***********//
@@ -86,6 +92,21 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		faceParams.y=0;
 		//faceParams.alpha= (float) ;
 		myWindowManager.addView(faceView,faceParams);
+		//************************SETTING UP THE LOCK VIEW************************//
+		WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+		mLayout = new FrameLayout(this);
+		WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+		lp.type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY;
+		lp.format = PixelFormat.TRANSLUCENT;
+		lp.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+		lp.width = WindowManager.LayoutParams.WRAP_CONTENT;
+		lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
+		lp.gravity = Gravity.BOTTOM|Gravity.RIGHT;
+		lp.x=0;
+		lp.y=0;
+		LayoutInflater Lockinflater = LayoutInflater.from(this);
+		Lockinflater.inflate(R.layout.layout_chat_head, mLayout);
+		wm.addView(mLayout, lp);
 		//************************SETTING UP THE CURSOR VIEW************************//
 		//**********************MAKING A LAYOUT FOR THE CURSOR************************//
 		cursorFrameLayout=new FrameLayout(this);
@@ -219,6 +240,11 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 
 			}
 		};
+
+
+
+		//**************************LOCK HANDLER***********************//
+
 		//**************************OPENING THE FACE DETECTION FILES***********************//
 
 
@@ -229,6 +255,34 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		cameraView.setCvCameraViewListener(this);
 		cameraView.enableView();
 
+		//**************************LOCK THE CURSOR***********************//
+		ImageView lockImg=mLayout.findViewById(R.id.chat_head_profile_iv);
+		lockImg.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				if(firstClick==0){
+					lock++;
+					firstClick=1;
+					Toast.makeText(MyAccessibilityService.this, "Locked", Toast.LENGTH_SHORT).show();
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				else{
+					lock--;
+					firstClick=0;
+					Toast.makeText(MyAccessibilityService.this, "Unlocked", Toast.LENGTH_SHORT).show();
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+				//Toast.makeText(MyAccessibilityService.this, lock+"", Toast.LENGTH_SHORT).show();
+			}
+		});
 
 	}
 	void bringInTheCascadeFileForFaceDetection() throws IOException {
@@ -329,153 +383,153 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 
 	@Override
 	public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-		//****************I AM INCREASING THE FRAME COUNT******************************//
-		frameCount=(frameCount+1)%200;
-		//*****************I AM COLLECTING THE TWO MATS FROM CAMERA**********************//
-		mGray=inputFrame.gray().t();
-		Core.flip(mGray,mGray,-1);
-		Imgproc.resize(mGray,mGray,inputFrame.gray().size());
 
-		mRgba=inputFrame.rgba().t();
-		Core.flip(mRgba,mRgba,-1);
-		Imgproc.resize(mRgba,mRgba,inputFrame.rgba().size());
+		//****************I AM INCREASING THE FRAME COUNT******************************//
+		frameCount = (frameCount + 1) % 200;
+		//*****************I AM COLLECTING THE TWO MATS FROM CAMERA**********************//
+		mGray = inputFrame.gray().t();
+		Core.flip(mGray, mGray, -1);
+		Imgproc.resize(mGray, mGray, inputFrame.gray().size());
+
+		mRgba = inputFrame.rgba().t();
+		Core.flip(mRgba, mRgba, -1);
+		Imgproc.resize(mRgba, mRgba, inputFrame.rgba().size());
 
 
 		//*********************THE CENTRE POINT AND CENTRE RECTANGLES ARE BEING ET UP**********************//
-		centrePoint =new Point();
-		centrePoint.x=mRgba.cols()/2;
-		centrePoint.y=mRgba.rows()/2;
+		centrePoint = new Point();
+		centrePoint.x = mRgba.cols() / 2;
+		centrePoint.y = mRgba.rows() / 2;
 
 
-		Rect centralRectangle=new Rect(new Point(centrePoint.x-30,centrePoint.y-30),
-				new Point(centrePoint.x+30,centrePoint.y+30));
+		Rect centralRectangle = new Rect(new Point(centrePoint.x - 30, centrePoint.y - 30),
+				new Point(centrePoint.x + 30, centrePoint.y + 30));
 
 
-		Imgproc.rectangle(mRgba,centralRectangle.tl(),centralRectangle.br(),new Scalar(100),3);
+		Imgproc.rectangle(mRgba, centralRectangle.tl(), centralRectangle.br(), new Scalar(100), 3);
 
-		Rect centralRectangleOuter=new Rect(new Point(centrePoint.x-50,centrePoint.y-50),
-				new Point(centrePoint.x+50,centrePoint.y+50));
-
-
-		Imgproc.rectangle(mRgba,centralRectangleOuter.tl(),centralRectangleOuter.br(),new Scalar(100),3);
+		Rect centralRectangleOuter = new Rect(new Point(centrePoint.x - 50, centrePoint.y - 50),
+				new Point(centrePoint.x + 50, centrePoint.y + 50));
 
 
+		Imgproc.rectangle(mRgba, centralRectangleOuter.tl(), centralRectangleOuter.br(), new Scalar(100), 3);
+		if (lock==0){
 
-		//*******************FRAME HANDLING NUMERICALLY********************//
-		if(frameCount%20==0){
 
-			//****************DETECTING FACE USING VIOLA JONES********************//
-			//matofrect  will collect the detected faces
-			MatOfRect faces=new MatOfRect();
-			//classifier detectsa face and stores the faces detected in faces object
-			haarCascadeClassifierForFace.detectMultiScale(mGray, faces, 1.1, 2,
-					2, new Size(100,100), new Size());
-			//this array stores all the faces
-			Rect[]facesArray = faces.toArray();
-			//if there is atleast one frame detected
-			if(facesArray.length>0){
-				//i show the face rectangle on the faceview
-				Imgproc.rectangle(mRgba,facesArray[0].tl(),facesArray[0].br(),new Scalar(100),3);
-				//i obtain the nose co-ordinates
-				nosePoint=new Point(facesArray[0].tl().x/2+facesArray[0].br().x/2,
-						facesArray[0].tl().y/2+facesArray[0].br().y/2
-				);
-				//this will only make a difference in case of the very first frame
-				prevFeaturesAvailable=true;
-				//i am going to store a previous matrix when the face is detected
-				prevmGray=mGray.clone();
-				//i am going to store the nosePoint as previois features
-				prevFeatures.fromArray(nosePoint);
-				//also i am going to draw the nosepoint drawn here
-				if(prevFeatures.toArray().length>0){
-					Imgproc.circle(mRgba,prevFeatures.toArray()[0],5,new Scalar(100),20);
+			//*******************FRAME HANDLING NUMERICALLY********************//
+			if (frameCount % 20 == 0) {
+
+				//****************DETECTING FACE USING VIOLA JONES********************//
+				//matofrect  will collect the detected faces
+				MatOfRect faces = new MatOfRect();
+				//classifier detectsa face and stores the faces detected in faces object
+				haarCascadeClassifierForFace.detectMultiScale(mGray, faces, 1.1, 2,
+						2, new Size(100, 100), new Size());
+				//this array stores all the faces
+				Rect[] facesArray = faces.toArray();
+				//if there is atleast one frame detected
+				if (facesArray.length > 0) {
+					//i show the face rectangle on the faceview
+					Imgproc.rectangle(mRgba, facesArray[0].tl(), facesArray[0].br(), new Scalar(100), 3);
+					//i obtain the nose co-ordinates
+					nosePoint = new Point(facesArray[0].tl().x / 2 + facesArray[0].br().x / 2,
+							facesArray[0].tl().y / 2 + facesArray[0].br().y / 2
+					);
+					//this will only make a difference in case of the very first frame
+					prevFeaturesAvailable = true;
+					//i am going to store a previous matrix when the face is detected
+					prevmGray = mGray.clone();
+					//i am going to store the nosePoint as previois features
+					prevFeatures.fromArray(nosePoint);
+					//also i am going to draw the nosepoint drawn here
+					if (prevFeatures.toArray().length > 0) {
+						Imgproc.circle(mRgba, prevFeatures.toArray()[0], 5, new Scalar(100), 20);
+					}
+
 				}
+			} else {//this block is for when violaJones is not being applied
+				//if i have a prev matrix and a prev nose point
+				if (prevFeaturesAvailable) {
+					//************IN THIS BLOCK MY INTENTION IS TO GET THE NEW FEATURE OR MOVED NOSE POSITION*********//
 
+					//pstorer stores the prevFeatures
+					pstorer = new Point();
+					pstorer.x = prevFeatures.toArray()[0].x;
+					pstorer.y = prevFeatures.toArray()[0].y;
+
+					//after this presentFeatures will have the latest noise points
+					Video.calcOpticalFlowPyrLK(prevmGray, mGray, prevFeatures, presentFeatures, status, err);
+					Imgproc.circle(mRgba, presentFeatures.toArray()[0], 5, new Scalar(100), 20);
+					//i am gonna store the features of this frame as prevFeatures now
+					prevmGray = mGray.clone();
+					prevFeatures = presentFeatures;
+					prevFeaturesAvailable = true;
+
+				}
 			}
-		} else{//this block is for when violaJones is not being applied
-			//if i have a prev matrix and a prev nose point
-			if(prevFeaturesAvailable){
-				//************IN THIS BLOCK MY INTENTION IS TO GET THE NEW FEATURE OR MOVED NOSE POSITION*********//
 
-				//pstorer stores the prevFeatures
-				pstorer=new Point();
-				pstorer.x=prevFeatures.toArray()[0].x;
-				pstorer.y=prevFeatures.toArray()[0].y;
+			if (firstTeethDetected == false) {
+				//*******************IF THERE ARE PREVIOUS FEATURES STH MAGICAL IS ABOUT TO HAPPEN**************//
+				Message msg = new Message();
+				if (presentFeatures.toArray().length != 0) {
 
-				//after this presentFeatures will have the latest noise points
-				Video.calcOpticalFlowPyrLK(prevmGray,mGray,prevFeatures, presentFeatures, status, err);
-				Imgproc.circle(mRgba,presentFeatures.toArray()[0],5,new Scalar(100),20);
-				//i am gonna store the features of this frame as prevFeatures now
-				prevmGray=mGray.clone();
-				prevFeatures=presentFeatures;
-				prevFeaturesAvailable=true;
+					//***********FOR LEFT MOVEMENT******************
+					if (centrePoint.x - presentFeatures.toArray()[0].x < -50) {
+						//o means left
+						Log.d("TAG5", "LEFT");
+						msg.what = 1;
+					} else if (centrePoint.x - presentFeatures.toArray()[0].x < -30) {
+						//o means left
+						Log.d("TAG5", "LEFT");
+						msg.what = 2;
+					}
+					//***********FOR RIGHT MOVEMENT******************
+					else if (centrePoint.x - presentFeatures.toArray()[0].x > 50) {
+						//1 means right
+						Log.d("TAG5", "RIGHT");
+						msg.what = 3;
+					} else if (centrePoint.x - presentFeatures.toArray()[0].x > 30) {
+						//1 means right
+						Log.d("TAG5", "RIGHT");
+						msg.what = 4;
+					}
+					//******************FOR DOWN MOVEMENT*************************//
+					else if (centrePoint.y - presentFeatures.toArray()[0].y < -50) {
+						//o means down
+						Log.d("TAG5", "DOWN");
+						msg.what = 5;
+					} else if (centrePoint.y - presentFeatures.toArray()[0].y < -30) {
+						//o means down
+						Log.d("TAG5", "DOWN");
+						msg.what = 6;
+					}
+					//*********************FOR UP MOVEMENT**************************//
+					else if (centrePoint.y - presentFeatures.toArray()[0].y > 50) {
+						//1 means up
+						Log.d("TAG5", "UP");
+						msg.what = 7;
+					} else if (centrePoint.y - presentFeatures.toArray()[0].y > 30) {
+						//1 means up
+						Log.d("TAG5", "UP");
+						msg.what = 8;
+					}
+					//**************************IF NO MOVEMENT******************************//
+					else {
+						msg.what = -1;
+					}
+				}
+				//if (lock == 0) {
+					handler.sendMessage(msg);
+				//}
+				try {
+					Thread.sleep(10);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				//************HANDLER MESSAGING ENDS HERE**********************//
 
 			}
 		}
-
-		if(firstTeethDetected==false){
-			//*******************IF THERE ARE PREVIOUS FEATURES STH MAGICAL IS ABOUT TO HAPPEN**************//
-			Message msg=new Message();
-			if(presentFeatures.toArray().length!=0){
-
-				//***********FOR LEFT MOVEMENT******************
-				if(centrePoint.x-presentFeatures.toArray()[0].x<-50 ){
-					//o means left
-					Log.d("TAG5","LEFT");
-					msg.what=1;
-				}else if(centrePoint.x-presentFeatures.toArray()[0].x<-30 ){
-					//o means left
-					Log.d("TAG5","LEFT");
-					msg.what=2;
-				}
-				//***********FOR RIGHT MOVEMENT******************
-				else if(centrePoint.x-presentFeatures.toArray()[0].x>50){
-					//1 means right
-					Log.d("TAG5","RIGHT");
-					msg.what=3;
-				}
-				else if(centrePoint.x-presentFeatures.toArray()[0].x>30){
-					//1 means right
-					Log.d("TAG5","RIGHT");
-					msg.what=4;
-				}
-				//******************FOR DOWN MOVEMENT*************************//
-				else if(centrePoint.y-presentFeatures.toArray()[0].y<-50){
-					//o means down
-					Log.d("TAG5","DOWN");
-					msg.what=5;
-				}
-				else if(centrePoint.y-presentFeatures.toArray()[0].y<-30){
-					//o means down
-					Log.d("TAG5","DOWN");
-					msg.what=6;
-				}
-				//*********************FOR UP MOVEMENT**************************//
-				else if(centrePoint.y-presentFeatures.toArray()[0].y>50){
-					//1 means up
-					Log.d("TAG5","UP");
-					msg.what=7;
-				}
-				else if(centrePoint.y-presentFeatures.toArray()[0].y>30){
-					//1 means up
-					Log.d("TAG5","UP");
-					msg.what=8;
-				}
-				//**************************IF NO MOVEMENT******************************//
-				else{
-					msg.what=-1;
-				}
-			}
-			handler.sendMessage(msg);
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			//************HANDLER MESSAGING ENDS HERE**********************//
-
-		}
-
 		//******************THIS IS THE CODE FOR CLICKING*************************//
 		MatOfRect teeth = new MatOfRect();
 		if(haarCascadeClassifierForTeeth != null) {

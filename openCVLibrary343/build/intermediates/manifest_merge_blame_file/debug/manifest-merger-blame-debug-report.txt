@@ -6,8 +6,8 @@
 6
 7    <uses-sdk
 8        android:minSdkVersion="25"
-8-->F:\OpenCVAndroidProjects\NTCC32\openCVLibrary343\src\main\AndroidManifest.xml
+8-->/media/neloy/Software/NTCC3-1/openCVLibrary343/src/main/AndroidManifest.xml
 9        android:targetSdkVersion="28" />
-9-->F:\OpenCVAndroidProjects\NTCC32\openCVLibrary343\src\main\AndroidManifest.xml
+9-->/media/neloy/Software/NTCC3-1/openCVLibrary343/src/main/AndroidManifest.xml
 10
 11</manifest>
