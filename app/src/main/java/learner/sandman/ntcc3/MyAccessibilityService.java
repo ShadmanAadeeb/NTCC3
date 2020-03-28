@@ -2,8 +2,6 @@ package learner.sandman.ntcc3;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Path;
@@ -53,6 +51,16 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 	int lock=0;
 	int firstClick=0;
 	Handler lockHandler;
+	//swipe variable
+	int screenHeight=0;
+	int screenWidth=0 ;
+	long startTime=0;
+	long endTime=0;
+	int flag=0;
+	long startTime2=0;
+	long endTime2=0;
+	int flag2=0;
+
 	//****************Variables for the cursorview**************//
 	FrameLayout cursorFrameLayout,mLayout;
 	WindowManager.LayoutParams cursorParams;
@@ -106,7 +114,7 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		lp.x=0;
 		lp.y=0;
 		LayoutInflater Lockinflater = LayoutInflater.from(this);
-		Lockinflater.inflate(R.layout.layout_chat_head, mLayout);
+		Lockinflater.inflate(R.layout.layout_lock, mLayout);
 		wm.addView(mLayout, lp);
 		//************************SETTING UP THE CURSOR VIEW************************//
 		//**********************MAKING A LAYOUT FOR THE CURSOR************************//
@@ -132,8 +140,8 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		//***********Getting and storing the screen width and screen height*****************//
 		DisplayMetrics displayMetrics = new DisplayMetrics();
 		myWindowManager.getDefaultDisplay().getMetrics(displayMetrics);
-		final int screenHeight = displayMetrics.heightPixels;
-		final int screenWidth = displayMetrics.widthPixels;
+		screenHeight = displayMetrics.heightPixels;
+		screenWidth = displayMetrics.widthPixels;
 
 
 		//********************THIS BLOCK CONSISTS OF THE HANDLER*************************//
@@ -144,13 +152,19 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 				ImageView cusor=cursorFrameLayout.findViewById(R.id.cursor_view);
 
 				switch (msg.what){
-					//****************FOR LEFT MOVEMENT*******************//
+					//****************FOR RIGHT MOVEMENT*******************//
 					case 1://left
 
 						cusor.setBackgroundColor(Color.BLACK);
 						cursorParams.x+=30;
 						if(cursorParams.x>screenWidth){
 							cursorParams.x=screenWidth;
+							if(flag==0) {
+								startTime = System.currentTimeMillis();
+								//Toast.makeText(MyAccessibilityService.this, "swipe start time", Toast.LENGTH_SHORT).show();
+								flag=1;
+								//endTime=0;
+							}
 						}
 						Log.d("TAG5","should go left");
 						break;
@@ -160,16 +174,24 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 						cursorParams.x+=10;
 						if(cursorParams.x>screenWidth){
 							cursorParams.x=screenWidth;
+
+
 						}
 						Log.d("TAG5","should go left");
 						break;
-					//********************FOR RIGHT MOVEMENT******************//
+					//********************FOR LEFT MOVEMENT******************//
 					case 3://right
 
 						cusor.setBackgroundColor(Color.BLACK);
 						cursorParams.x-=30;
 						if(cursorParams.x<0){
 							cursorParams.x=0;
+							if(flag2==0) {
+								startTime2 = System.currentTimeMillis();
+								//Toast.makeText(MyAccessibilityService.this, "swipe start time", Toast.LENGTH_SHORT).show();
+								flag2=1;
+								//endTime=0;
+							}
 						}
 						Log.d("TAG5","should go right");
 						break;
@@ -179,6 +201,7 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 						cursorParams.x-=10;
 						if(cursorParams.x<0){
 							cursorParams.x=0;
+
 						}
 						Log.d("TAG5","should go right");
 						break;
@@ -262,7 +285,7 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		cameraView.enableView();
 
 		//**************************LOCK THE CURSOR***********************//
-		ImageView lockImg=mLayout.findViewById(R.id.chat_head_profile_iv);
+		ImageView lockImg=mLayout.findViewById(R.id.lockView);
 		lockImg.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
@@ -339,7 +362,27 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 		}
 	}
 
+	//*******************SWIPE CODE************************//
 
+	void RightSwipe(){
+		Path swipePath = new Path();
+		swipePath.moveTo(screenWidth-70, screenHeight/2);
+		swipePath.lineTo(0, screenHeight/2);
+		GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+		gestureBuilder.addStroke(new GestureDescription.StrokeDescription(swipePath, 0, 400));
+		dispatchGesture(gestureBuilder.build(), null, null);
+
+	}
+
+	void LeftSwipe(){
+		Path swipePath = new Path();
+		swipePath.moveTo(70, screenHeight/2);
+		swipePath.lineTo(screenWidth, screenHeight/2);
+		GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+		gestureBuilder.addStroke(new GestureDescription.StrokeDescription(swipePath, 0, 400));
+		dispatchGesture(gestureBuilder.build(), null, null);
+
+	}
 
 	//*******************THESE VARIABLES ARE RELATED  TO OPENCV************************//
 
@@ -542,6 +585,29 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+
+				if(flag==1) {
+					endTime = System.currentTimeMillis();
+				}
+
+				if((endTime-startTime>3000) && cursorParams.x==screenWidth){
+					RightSwipe();
+					flag=0;
+					startTime=0;
+					endTime=0;
+					Log.d("Time",endTime-startTime+"=Difference");
+				}
+
+				if(flag2==1) {
+					endTime2 = System.currentTimeMillis();
+				}
+				if((endTime2-startTime2>3000) && cursorParams.x==0){
+					LeftSwipe();
+					flag2=0;
+					startTime2=0;
+					endTime2=0;
+					//Log.d("Time",endTime-startTime+"=Difference");
+				}
 				//************HANDLER MESSAGING ENDS HERE**********************//
 
 			}
@@ -587,6 +653,13 @@ public class MyAccessibilityService extends AccessibilityService implements Came
 				}
 			}
 
+		}
+
+		if(cursorParams.x<screenWidth){
+			flag=0;
+		}
+		if(cursorParams.x>0){
+			flag2=0;
 		}
 		//************CODE FOR TEETH DETECTION AND CLICKING ENDS HERE***********************//
 		return mRgba;
